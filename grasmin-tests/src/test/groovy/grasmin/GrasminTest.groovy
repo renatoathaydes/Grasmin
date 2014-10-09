@@ -113,5 +113,4 @@ class GrasminTest extends GroovyTestCase {
         0
     }
 
-
 }

@@ -1,4 +1,8 @@
 apply plugin: 'groovy'
+apply plugin: 'maven'
+
+group = 'com.athaydes.grasmin'
+version = 0.1
 
 repositories {
     mavenLocal()
