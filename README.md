@@ -115,11 +115,15 @@ public class com_athaydes_grasmin_Hello_sum {
 The above is the whole output of `javap` (without the *verbose* key).
 The `j` file mentioned in the first line is the temporary file used by Grasmin as input for Jasmin.
 
-## Future and performance
+## Future work and performance
 
 Unfortunately, delegating a method call to a static method of an external class does not seem to be very efficient for
 a short algorithm, at least, so gains in performance cannot be guaranteed! However, I am sure there would be cases where
 handcrafted Assembly cannot be beaten either by `javac` or `JIT` optimizations. I would love to hear of any examples.
+
+I plan to add support for writing whole classes in Jasmin assembly, hence avoid having to delegate a method calls to an
+external class, which I hope will bring Grasmin performance above Java for most algorithms, especially those that the
+compiler finds harder to optimize.
 
 There are some performance tests in [this directory](grasmin-tests/src/test/groovy/grasmin/) which show that, for example,
 writing the simple GCD Euclidean algorithm in Jasmin is actually less efficient than just writing the non-recursive algorithm
@@ -134,10 +138,14 @@ Java         | Groovy @CompileStatic | Grovy @TailRecursive | @JasminCode
 -------------|-----------------------|----------------------|------------
 2.794.043,06 | 2.497.728,88          | 2.870.736,07         | 3.249.961,17
 2.915.521,62 | 2.684.497,9           | 2.813.709,1          | 3.455.433,63
+2.926.648,15 | 2.634.187,88          | 2.935.640,63         | 3.904.040,23
 
 Implementations:
 
-* Java - non-recursive algorithm written in Java
-* Groovy @CompileStatic - non-recursive algorithm written in Groovy, annotated with @CompileStatic
-* Groovy @TailRecursive - recursive algorithm written in Groovy, annotated with both @CompileStatic and @TaileRecursive
-* @JasminCode - non-recursive algorithm written in Jasmin assembly
+* `Java` - non-recursive algorithm written in Java
+* `Groovy @CompileStatic` - non-recursive algorithm written in Groovy, annotated with @CompileStatic
+* `Groovy @TailRecursive` - recursive algorithm written in Groovy, annotated with both @CompileStatic and @TailRecursive
+* `@JasminCode` - non-recursive algorithm written in Jasmin assembly via Grasmin
+
+Note: in the last run, the order in which the algorithms were run was modified to: Java, @JasminCode,
+Groovy@CompileStatic, Groovy@TailRecursive. This did not seem to impact on the relative results.
