@@ -30,8 +30,10 @@ class Hello {
 Currently, you need to clone this repo and build it with Gradle:
 
 ```
-gradle install
+gradlew install
 ```
+
+> `gradlew` (Gradle wrapper) will download Gradle automatically if you don't already have it, then build Grasmin.
 
 This will put the following artifact in your local Maven repo:
 
@@ -41,7 +43,7 @@ name = 'grasmin-core'
 version = 0.1
 ```
 
-If you don't use Maven, just do `gradle jar` to create a jar in the `build/libs` folder.
+If you don't use Maven and Gradle, just do `gradlew jar` to create a jar in the `build/libs` folder.
 
 Currently, only methods can be annotated with `@JasminCode`. Annotated methods can have any signature.
 If your method needs to return a particular type, just add a dummy value as the last statement of your method to
