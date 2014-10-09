@@ -1,0 +1,15 @@
+apply plugin: 'groovy'
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+def jasminJar = System.getenv( 'JASMIN_JAR' ) ?: 'C:\\Programs\\Jasmin\\jasmin-2.4\\jasmin.jar'
+
+dependencies {
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.2'
+    compile files( jasminJar )
+    compile project(':grasmin-core')
+    testCompile group: 'junit', name: 'junit', version: '4.10'
+}

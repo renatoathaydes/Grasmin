@@ -1,0 +1,5 @@
+rootProject.name = 'grasmin'
+
+include 'grasmin-core'
+include 'grasmin-tests'
+
