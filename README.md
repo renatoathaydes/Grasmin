@@ -25,6 +25,9 @@ class Hello {
 }
 ```
 
+Most [JVM instructions](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html) should work with Jasmin code.
+Let me know if you have any issues.
+
 ## Using Grasmin
 
 Currently, you need to clone this repo and build it with Gradle:
