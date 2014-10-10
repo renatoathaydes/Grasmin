@@ -17,7 +17,6 @@ class Test1 {
         invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
         return
         """
-        0
     }
 
 }

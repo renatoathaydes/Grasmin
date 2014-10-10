@@ -12,9 +12,16 @@ class GrasminASTTransformationTest extends GroovyTestCase {
         def helper = new TransformTestHelper( new GrasminASTTransformation(), CompilePhase.SEMANTIC_ANALYSIS )
         def test1 = helper.parse( this.class.getResource( '/Test1.groovy' ).path as File )
         def inst = test1.newInstance()
-        def res = inst.exampleJasminCode()
-        println "OK ${res}"
-        sleep 400
+        assert inst.exampleJasminCode() == null
+    }
+
+    void testMethodsNotProcessedIfClassIsAnnotated() {
+        def helper = new TransformTestHelper( new GrasminASTTransformation(), CompilePhase.SEMANTIC_ANALYSIS )
+        def test1 = helper.parse( this.class.getResource( '/AnnotatedClass.groovy' ).path as File )
+        def inst = test1.newInstance()
+        assert inst.returns10() == 10
+        assert inst.annotatedMethodJasminCode() == null
+        assert inst.noAnnotationJasminCode() == null
     }
 
 }

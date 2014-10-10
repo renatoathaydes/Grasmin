@@ -1,6 +1,7 @@
 package com.athaydes.grasmin
 
 import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -23,23 +24,36 @@ class GrasminASTTransformation implements ASTTransformation {
     static final Set processedSourceUnits = [ ]
     static final Grasmin grasmin = new Grasmin()
 
-    public void visit( ASTNode[] nodes, SourceUnit sourceUnit ) {
+    public void visit( ASTNode[] astNodes, SourceUnit sourceUnit ) {
         if ( !processedSourceUnits.add( sourceUnit ) ) return
 
         log.fine "Transforming sourceUnit ${sourceUnit.name}"
 
         if ( !sourceUnit || !sourceUnit.AST ) return
-        List methods = sourceUnit.getAST().getClasses()*.getMethods().flatten()
 
-        methods.findAll { MethodNode method ->
-            method.getAnnotations( new ClassNode( JasminCode ) )
-        }.each { MethodNode method ->
-            log.fine "Found method annotated with @JasminCode $method.name"
-            processMethod( method, sourceUnit )
+        def processNodes = { List<AnnotatedNode> nodes ->
+            nodes.findAll { node ->
+                node.getAnnotations( new ClassNode( JasminCode ) )
+            }.each { AnnotatedNode node ->
+                process( node, sourceUnit )
+            }
         }
+
+        List classNodes = sourceUnit.getAST().getClasses()
+        List methods = classNodes*.getMethods().flatten()
+
+        processNodes classNodes
+        processNodes methods
     }
 
-    private void processMethod( MethodNode method, SourceUnit sourceUnit ) {
+    private void process( ClassNode classNode, SourceUnit sourceUnit ) {
+
+    }
+
+    private void process( MethodNode method, SourceUnit sourceUnit ) {
+        if ( method.declaringClass.getAnnotations( new ClassNode( JasminCode ) ) ) {
+            return
+        }
         List existingStatements = method.code.statements
         if ( existingStatements.size() > 0 ) {
             def statement = existingStatements.first()
@@ -53,20 +67,25 @@ class GrasminASTTransformation implements ASTTransformation {
                 }
 
                 try {
-                    existingStatements.clear()
-                    def targetDir = sourceUnit.configuration.targetDirectory
-                    def className = classNameFor( method )
-                    def jasminClass = grasmin.createJasminClass( assemblerText, targetDir, className, method )
-                    def classNode = new ClassNode( jasminClass )
-
-                    if ( !targetDir ) sourceUnit.getAST().addClass( classNode )
-                    def jasminMethodCall = grassemblyStatement( classNode, method )
-                    existingStatements.add( jasminMethodCall )
+                    rewriteMethod( sourceUnit, method, assemblerText )
                 } catch ( Throwable e ) {
                     log.warning e.toString() + ' ' + e.getCause()?.toString()
                 }
             }
         }
+    }
+
+    private void rewriteMethod( SourceUnit sourceUnit, MethodNode method, assemblerText ) {
+        method.code.statements.clear()
+        def targetDir = sourceUnit.configuration.targetDirectory
+        def className = classNameFor( method )
+        def jasminClass = grasmin.createJasminClass( assemblerText, targetDir, className, method )
+        def classNode = new ClassNode( jasminClass )
+
+        if ( !targetDir ) sourceUnit.getAST().addClass( classNode )
+
+        def jasminMethodCall = grassemblyStatement( classNode, method )
+        method.code.statements.add( jasminMethodCall )
     }
 
     static classNameFor( MethodNode methodNode ) {

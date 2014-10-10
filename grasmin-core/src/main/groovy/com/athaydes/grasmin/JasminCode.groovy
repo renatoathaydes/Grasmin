@@ -11,7 +11,7 @@ import java.lang.annotation.Target
  *
  */
 @Retention( RetentionPolicy.SOURCE )
-@Target( [ ElementType.METHOD ] )
+@Target( [ ElementType.METHOD, ElementType.TYPE ] )
 @GroovyASTTransformationClass( [ "com.athaydes.grasmin.GrasminASTTransformation" ] )
 public @interface JasminCode {
 }
