@@ -6,6 +6,8 @@ import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.stmt.Statement
 import spock.lang.Specification
 
+import java.lang.reflect.Modifier
+
 /**
  *
  */
@@ -60,6 +62,24 @@ class JasminTyperSpec extends Specification {
         new MethodNode( methodName, 0, new ClassNode( returnType ),
                 paramTypes.collect { new Parameter( new ClassNode( it ), paramNames.remove() ) } as Parameter[],
                 [ ] as ClassNode[], new Statement() )
+    }
+
+    def "Can collect all modifiers of a class"() {
+        given: 'A JasminTyper'
+        def jasminTyper = new JasminTyper()
+
+        when: "All modifiers of a class are requested"
+        def result = jasminTyper.modifiersString( modifiers )
+
+        then: "The expected value is returned"
+        result == expected
+
+        where:
+        modifiers                                                       | expected
+        0                                                               | ''
+        Modifier.PUBLIC                                                 | 'public'
+        Modifier.PUBLIC.or( Modifier.ABSTRACT )                         | 'public abstract'
+        Modifier.PROTECTED.or( Modifier.FINAL ).or( Modifier.VOLATILE ) | 'protected final volatile'
     }
 
 }
