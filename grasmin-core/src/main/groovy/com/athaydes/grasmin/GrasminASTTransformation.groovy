@@ -35,32 +35,35 @@ class GrasminASTTransformation implements ASTTransformation {
             method.getAnnotations( new ClassNode( JasminCode ) )
         }.each { MethodNode method ->
             log.fine "Found method annotated with @JasminCode $method.name"
+            processMethod( method, sourceUnit )
+        }
+    }
 
-            List existingStatements = method.code.statements
-            if ( existingStatements.size() >= 1 ) {
-                def statement = existingStatements.first()
-                if ( statement instanceof ExpressionStatement ) {
-                    def expr = statement.expression
-                    def assemblerText
-                    if ( expr instanceof PropertyExpression ) {
-                        assemblerText = Eval.me( expr.text )
-                    } else {
-                        assemblerText = expr.text
-                    }
+    private void processMethod( MethodNode method, SourceUnit sourceUnit ) {
+        List existingStatements = method.code.statements
+        if ( existingStatements.size() > 0 ) {
+            def statement = existingStatements.first()
+            if ( statement instanceof ExpressionStatement ) {
+                def expr = statement.expression
+                def assemblerText
+                if ( expr instanceof PropertyExpression ) {
+                    assemblerText = Eval.me( expr.text )
+                } else {
+                    assemblerText = expr.text
+                }
 
-                    try {
-                        existingStatements.clear()
-                        def targetDir = sourceUnit.configuration.targetDirectory
-                        def className = classNameFor( method )
-                        def jasminClass = grasmin.createJasminClass( assemblerText, targetDir, className, method )
-                        def classNode = new ClassNode( jasminClass )
+                try {
+                    existingStatements.clear()
+                    def targetDir = sourceUnit.configuration.targetDirectory
+                    def className = classNameFor( method )
+                    def jasminClass = grasmin.createJasminClass( assemblerText, targetDir, className, method )
+                    def classNode = new ClassNode( jasminClass )
 
-                        if ( !targetDir ) sourceUnit.getAST().addClass( classNode )
-                        def jasminMethodCall = grassemblyStatement( classNode, method )
-                        existingStatements.add( jasminMethodCall )
-                    } catch ( Throwable e ) {
-                        log.warning e.toString() + ' ' + e.getCause()?.toString()
-                    }
+                    if ( !targetDir ) sourceUnit.getAST().addClass( classNode )
+                    def jasminMethodCall = grassemblyStatement( classNode, method )
+                    existingStatements.add( jasminMethodCall )
+                } catch ( Throwable e ) {
+                    log.warning e.toString() + ' ' + e.getCause()?.toString()
                 }
             }
         }

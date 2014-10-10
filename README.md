@@ -4,7 +4,7 @@
 Grasmin allows you to write [Jasmin](http://jasmin.sourceforge.net/) code (which is basically JVM assembly bytecode instructions)
 directly on your Groovy files by annotating methods with the `@JasminCode` annotation.
 
-This annotation is a Groovy AST Transformation, which allows manipulation of classes during the compilation process.
+This annotation is a Groovy AST Transformation, which allows manipulation of source code during the compilation process.
 
 For example, you could write `Hello World` as follows:
 
