@@ -15,6 +15,10 @@ class JasminTyper {
         "${newMethodName ?: methodNode.name}(${paramTypes})${returnType}"
     }
 
+    String className( String javaClassName ) {
+        javaClassName.replace( '.', '/' )
+    }
+
     String typeNameFor( String type ) {
         switch ( type ) {
         // primitive types
@@ -44,7 +48,7 @@ class JasminTyper {
     }
 
     String jvmType( String type ) {
-        'L' + type.replace( '.', '/' ) + ';'
+        'L' + className( type ) + ';'
     }
 
     String modifiersString( int modifiers ) {

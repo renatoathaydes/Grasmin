@@ -2,6 +2,8 @@ package com.athaydes.grasmin
 
 import jasmin.Main
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 
 class Grasmin {
 
@@ -50,6 +52,25 @@ class Grasmin {
         .method public static ${typer.typeDescriptorOf( methodNode, 'run' )}
             $methodBody
         .end method"""
+    }
+
+    String extractJasminMethodBody( MethodNode methodNode ) {
+        List existingStatements = methodNode.code.statements
+        if ( existingStatements.size() > 0 ) {
+            def statement = existingStatements.first()
+            if ( statement instanceof ExpressionStatement ) {
+                def expr = statement.expression
+                String assemblerText
+                if ( expr instanceof PropertyExpression ) {
+                    assemblerText = Eval.me( expr.text )
+                } else {
+                    assemblerText = expr.text
+                }
+
+                return assemblerText
+            }
+        }
+        throw new RuntimeException( "Method ${methodNode.name} does not contain an Expression with JasminCode" )
     }
 
 }

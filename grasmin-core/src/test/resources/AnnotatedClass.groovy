@@ -1,7 +1,7 @@
 import com.athaydes.grasmin.JasminCode
 
 @JasminCode
-class AnnotatedClass {
+final class AnnotatedClass {
 
     int returns10() {
         10

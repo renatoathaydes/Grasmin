@@ -23,6 +23,7 @@ class GrasminASTTransformation implements ASTTransformation {
     Logger log = Logger.getLogger( GrasminASTTransformation.name )
     static final Set processedSourceUnits = [ ]
     static final Grasmin grasmin = new Grasmin()
+    JasminTyper typer = new JasminTyper()
 
     public void visit( ASTNode[] astNodes, SourceUnit sourceUnit ) {
         if ( !processedSourceUnits.add( sourceUnit ) ) return
@@ -47,35 +48,47 @@ class GrasminASTTransformation implements ASTTransformation {
     }
 
     private void process( ClassNode classNode, SourceUnit sourceUnit ) {
+        log.fine "Processing class $classNode"
+        def targetDir = sourceUnit.configuration.targetDirectory
 
+        def methodBodies = classNode.methods.collect { method ->
+            """|.method ${typer.modifiersString( method.modifiers )} ${typer.typeDescriptorOf( method )}
+               |${grasmin.extractJasminMethodBody( method )}
+               |.end method
+               |""".stripMargin()
+        }
+
+        def modifiers = typer.modifiersString classNode.modifiers
+        def classDeclaration = """
+            |.class ${modifiers} ${classNode.name}
+            |.super ${typer.className( classNode.superClass.name )}
+            |""".stripMargin()
+        def classBody = """
+            |.method public <init>()V
+            |   aload_0
+            |   invokespecial java/lang/Object/<init>()V
+            |   return
+            |.end method
+            |
+            |""".stripMargin() + methodBodies.join( '\n' )
+        log.info classDeclaration + classBody
     }
 
     private void process( MethodNode method, SourceUnit sourceUnit ) {
         if ( method.declaringClass.getAnnotations( new ClassNode( JasminCode ) ) ) {
             return
         }
-        List existingStatements = method.code.statements
-        if ( existingStatements.size() > 0 ) {
-            def statement = existingStatements.first()
-            if ( statement instanceof ExpressionStatement ) {
-                def expr = statement.expression
-                def assemblerText
-                if ( expr instanceof PropertyExpression ) {
-                    assemblerText = Eval.me( expr.text )
-                } else {
-                    assemblerText = expr.text
-                }
 
-                try {
-                    rewriteMethod( sourceUnit, method, assemblerText )
-                } catch ( Throwable e ) {
-                    log.warning e.toString() + ' ' + e.getCause()?.toString()
-                }
-            }
+        log.info "Processing method $method"
+
+        try {
+            rewriteMethod( sourceUnit, method, grasmin.extractJasminMethodBody( method ) )
+        } catch ( Throwable e ) {
+            log.warning e.toString() + ' ' + e.getCause()?.toString()
         }
     }
 
-    private void rewriteMethod( SourceUnit sourceUnit, MethodNode method, assemblerText ) {
+    private void rewriteMethod( SourceUnit sourceUnit, MethodNode method, String assemblerText ) {
         method.code.statements.clear()
         def targetDir = sourceUnit.configuration.targetDirectory
         def className = classNameFor( method )
