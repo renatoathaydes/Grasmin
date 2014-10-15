@@ -51,27 +51,7 @@ class GrasminASTTransformation implements ASTTransformation {
         log.fine "Processing class $classNode"
         def targetDir = sourceUnit.configuration.targetDirectory
 
-        def methodBodies = classNode.methods.collect { method ->
-            """|.method ${typer.modifiersString( method.modifiers )} ${typer.typeDescriptorOf( method )}
-               |${grasmin.extractJasminMethodBody( method )}
-               |.end method
-               |""".stripMargin()
-        }
-
-        def modifiers = typer.modifiersString classNode.modifiers
-        def classDeclaration = """
-            |.class ${modifiers} ${classNode.name}
-            |.super ${typer.className( classNode.superClass.name )}
-            |""".stripMargin()
-        def classBody = """
-            |.method public <init>()V
-            |   aload_0
-            |   invokespecial java/lang/Object/<init>()V
-            |   return
-            |.end method
-            |
-            |""".stripMargin() + methodBodies.join( '\n' )
-        log.info classDeclaration + classBody
+        grasmin.createJasminClass( classNode, targetDir )
     }
 
     private void process( MethodNode method, SourceUnit sourceUnit ) {
