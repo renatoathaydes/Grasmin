@@ -3,10 +3,6 @@ import com.athaydes.grasmin.JasminCode
 @JasminCode
 final class AnnotatedClass {
 
-    int returns10() {
-        10
-    }
-
     @JasminCode
     void annotatedMethodJasminCode() {
         """

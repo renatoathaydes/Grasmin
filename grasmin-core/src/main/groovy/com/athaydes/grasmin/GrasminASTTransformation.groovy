@@ -7,7 +7,6 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.CompilePhase
@@ -48,10 +47,12 @@ class GrasminASTTransformation implements ASTTransformation {
     }
 
     private void process( ClassNode classNode, SourceUnit sourceUnit ) {
-        log.fine "Processing class $classNode"
+        log.fine "Processing class $classNode.name"
         def targetDir = sourceUnit.configuration.targetDirectory
 
         grasmin.createJasminClass( classNode, targetDir )
+
+        sourceUnit.AST.classes.remove( classNode ) // replaced Groovy class with Jasmin class
     }
 
     private void process( MethodNode method, SourceUnit sourceUnit ) {
@@ -59,7 +60,7 @@ class GrasminASTTransformation implements ASTTransformation {
             return
         }
 
-        log.info "Processing method $method"
+        log.fine "Processing method $method.name"
 
         try {
             rewriteMethod( sourceUnit, method, grasmin.extractJasminMethodBody( method ) )
@@ -69,7 +70,6 @@ class GrasminASTTransformation implements ASTTransformation {
     }
 
     private void rewriteMethod( SourceUnit sourceUnit, MethodNode method, String assemblerText ) {
-        method.code.statements.clear()
         def targetDir = sourceUnit.configuration.targetDirectory
         def className = classNameFor( method )
         def jasminClass = grasmin.createJasminClass( assemblerText, targetDir, className, method )
@@ -78,7 +78,7 @@ class GrasminASTTransformation implements ASTTransformation {
         if ( !targetDir ) sourceUnit.getAST().addClass( classNode )
 
         def jasminMethodCall = grassemblyStatement( classNode, method )
-        method.code.statements.add( jasminMethodCall )
+        method.code = jasminMethodCall
     }
 
     static classNameFor( MethodNode methodNode ) {
