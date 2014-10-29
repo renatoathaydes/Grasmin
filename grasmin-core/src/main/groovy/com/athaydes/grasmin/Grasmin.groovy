@@ -126,7 +126,7 @@ class Grasmin {
     }
 
     private void writeDebugFileFor( AnnotationNode annotation, String text ) {
-        String debugFileName = ( annotation.getMember( 'outputFile' ) as ConstantExpression ).value
+        String debugFileName = ( annotation.getMember( 'outputDebugFile' ) as ConstantExpression ).value
         if ( debugFileName ) {
             log.fine( "Writing JasminCode to debug file: $debugFileName" )
             try {

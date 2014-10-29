@@ -4,7 +4,7 @@ import com.athaydes.grasmin.JasminCode
 import groovy.transform.CompileStatic
 
 @CompileStatic
-@JasminCode(outputFile = 'the-jasmin-code-class.j')
+@JasminCode(outputDebugFile = 'the-jasmin-code-class.j')
 class JasminCodeClass extends Object {
 
     private  String name = 'Joda'
