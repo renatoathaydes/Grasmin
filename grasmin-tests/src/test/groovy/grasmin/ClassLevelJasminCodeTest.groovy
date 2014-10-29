@@ -16,4 +16,9 @@ class ClassLevelJasminCodeTest {
         assert jasminCode.hello( 'abc' ) == 'Hello abc'
     }
 
+    @Test
+    void shouldBeAbleToSeeFields() {
+        assert jasminCode.getName() == 'Joda'
+    }
+
 }

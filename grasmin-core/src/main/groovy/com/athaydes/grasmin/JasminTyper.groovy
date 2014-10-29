@@ -43,11 +43,11 @@ class JasminTyper {
             case 'void':
             case 'Void': return 'V'
         // references
-            default: return jvmType( type )
+            default: return nonPrimitiveTypeDescription( type )
         }
     }
 
-    String jvmType( String type ) {
+    String nonPrimitiveTypeDescription( String type ) {
         'L' + className( type ) + ';'
     }
 

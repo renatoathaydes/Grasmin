@@ -33,9 +33,6 @@ class Hello {
         iadd
         ireturn
         """
-        println "Fuck"
-        3 + 5
-
         5000 // ignored, but makes the IDE happy
     }
 
