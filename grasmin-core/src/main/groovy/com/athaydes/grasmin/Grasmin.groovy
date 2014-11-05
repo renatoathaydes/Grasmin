@@ -3,6 +3,7 @@ package com.athaydes.grasmin
 import jasmin.Main
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.ConstructorNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -49,8 +50,11 @@ class Grasmin {
         log.info( "Checking class ${classNode.name}" )
 
         def methodBodies = classNode.methods.findResults { method ->
-            def methodBody = extractJasminMethodBody( method )
-            if ( !methodBody ) return null
+            def methodBody = extractJasminMethodBody( method.code )
+            if ( !methodBody ) {
+                log.warning( "Method ${method.name} does not contain an Expression with JasminCode" )
+                return null
+            }
             log.info( "-- Checking method ${method.name} from ${method.typeDescriptor}" )
             """|.method ${typer.modifiersString( method.modifiers )} ${typer.typeDescriptorOf( method )}
                |${methodBody}
@@ -66,7 +70,7 @@ class Grasmin {
             |.super ${typer.className( classNode.superClass.name )}
             |
             |${fields.collect { it.descriptor }.join( '\n' )}
-            |${constructorFor( classNode, fields )}
+            |${constructorsFor( classNode, fields )}
             |
             |""".stripMargin() + methodBodies.join( '\n' )
 
@@ -80,13 +84,11 @@ class Grasmin {
         }
     }
 
-    String constructorFor( ClassNode classNode, Collection<Map> fields ) {
+    private String constructorsFor( ClassNode classNode, Collection<Map> fields ) {
         def initializedFields = fields.findAll { it.value != null }
         if ( classNode.declaredConstructors || initializedFields ) {
-            classNode.declaredConstructors.each {
-                log.info "Found constructor: " + it.parameters
-            }
             """
+            |${createConstructors( classNode.declaredConstructors )}
             |.method public <init>()V
             |    .limit stack ${initializedFields.size() + 1}
             |    aload_0
@@ -100,14 +102,28 @@ class Grasmin {
         }
     }
 
-    String initializeField( Map field, ClassNode classNode ) {
+    private String createConstructors( List<ConstructorNode> constructorNodes ) {
+        constructorNodes.collect { constructor ->
+            """
+            |.method ${typer.modifiersString( constructor.modifiers )} <init>(${
+                constructor.parameters.collect {
+                    typer.typeNameFor( it.originType.typeClass.name )
+                }.join( '' )
+            })V
+            |${extractJasminMethodBody( constructor.code )}
+            |.end method
+            |""".stripMargin()
+        }.join( '\n' )
+    }
+
+    private String initializeField( Map field, ClassNode classNode ) {
         """\
         |    aload_0
         |    ldc ${field.value}
         |    putfield ${typer.className( classNode.name )}/${field.name} ${field.fieldType}""".stripMargin()
     }
 
-    Collection<Map> fieldsOf( ClassNode classNode ) {
+    private Collection<Map> fieldsOf( ClassNode classNode ) {
         classNode.fields.findResults {
             if ( fieldNamePrefixesToSkip.any { prefix -> it.name.startsWith( prefix ) } ) {
                 return null
@@ -137,7 +153,7 @@ class Grasmin {
         }
     }
 
-    def jasminFileContents( String className, String methodBody, MethodNode methodNode ) {
+    private String jasminFileContents( String className, String methodBody, MethodNode methodNode ) {
         """
         |.class public $className
         |.super java/lang/Object
@@ -149,16 +165,15 @@ class Grasmin {
         |.end method""".stripMargin()
     }
 
-    String extractJasminMethodBody( MethodNode methodNode ) {
-        def firstStatement = firstStatementOf( methodNode )
+    String extractJasminMethodBody( Statement statement ) {
+        def firstStatement = firstStatementOf( statement )
         if ( firstStatement instanceof ExpressionStatement ) {
             return valueOfExpression( firstStatement.expression )
         }
-        log.warning( "Method ${methodNode.name} does not contain an Expression with JasminCode" )
         return null
     }
 
-    String valueOfExpression( Expression expression ) {
+    private String valueOfExpression( Expression expression ) {
         if ( expression instanceof PropertyExpression ) {
             return Eval.me( expression.text )
         } else {
@@ -167,12 +182,11 @@ class Grasmin {
 
     }
 
-    Statement firstStatementOf( MethodNode methodNode ) {
-        def statement = methodNode.code
+    private Statement firstStatementOf( Statement statement ) {
         if ( statement instanceof BlockStatement ) {
-            return statement.statements?.first()
+            statement.statements?.first()
         } else {
-            return statement
+            statement
         }
     }
 

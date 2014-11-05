@@ -21,4 +21,11 @@ class ClassLevelJasminCodeTest {
         assert jasminCode.getName() == 'Joda'
     }
 
+    @Test
+    void constructorWorks() {
+        def instance = new JasminCodeClass('Spock', 42)
+        assert instance.getName() == 'Spock'
+        assert instance.getI() == 42
+    }
+
 }

@@ -63,13 +63,16 @@ class GrasminASTTransformation implements ASTTransformation {
         log.fine "Processing method $method.name"
 
         try {
-            rewriteMethod( sourceUnit, method, grasmin.extractJasminMethodBody( method ) )
+            rewriteMethod( sourceUnit, method, grasmin.extractJasminMethodBody( method.code ) )
         } catch ( Throwable e ) {
             log.warning e.toString() + ' ' + e.getCause()?.toString()
         }
     }
 
     private void rewriteMethod( SourceUnit sourceUnit, MethodNode method, String assemblerText ) {
+        if ( !assemblerText ) {
+            throw new Exception("No Jasmin code found in method ${method.name}")
+        }
         def targetDir = sourceUnit.configuration.targetDirectory
         def className = classNameFor( method )
         def jasminClass = grasmin.createJasminClass( assemblerText, targetDir, className, method )
