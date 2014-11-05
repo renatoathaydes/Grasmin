@@ -87,19 +87,30 @@ class Grasmin {
     private String constructorsFor( ClassNode classNode, Collection<Map> fields ) {
         def initializedFields = fields.findAll { it.value != null }
         if ( classNode.declaredConstructors || initializedFields ) {
-            """
+            """\
             |${createConstructors( classNode.declaredConstructors )}
-            |.method public <init>()V
-            |    .limit stack ${initializedFields.size() + 1}
-            |    aload_0
-            |    invokenonvirtual java/lang/Object/<init>()V
-            |${initializedFields.collect { initializeField( it, classNode ) }.join( '\n' )}
-            |    return
-            |.end method
-            |""".stripMargin()
+            |${
+                containsDefaultConstructor( classNode.declaredConstructors ) ?
+                        '' : defaultConstructorWith( initializedFields, classNode )
+            }""".stripMargin()
         } else {
             defaultConstructor
         }
+    }
+
+    private boolean containsDefaultConstructor( List<ConstructorNode> constructors ) {
+        constructors.any { it.parameters.size() == 0 }
+    }
+
+    private String defaultConstructorWith( Collection<Map> initializedFields, ClassNode classNode ) {
+        """\
+        |.method public <init>()V
+        |    .limit stack ${initializedFields.size() + 1}
+        |    aload_0
+        |    invokenonvirtual java/lang/Object/<init>()V
+        |${initializedFields.collect { initializeField( it, classNode ) }.join( '\n' )}
+        |    return
+        |.end method"""
     }
 
     private String createConstructors( List<ConstructorNode> constructorNodes ) {
