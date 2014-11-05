@@ -10,6 +10,9 @@ class JasminCodeClassComplex extends Object {
     private String name = 'Joda'
     private int i
 
+    public static final String staticString = 'a-string'
+    public static final int staticInt = 123
+
     JasminCodeClassComplex() {
         """\
         .limit stack 2

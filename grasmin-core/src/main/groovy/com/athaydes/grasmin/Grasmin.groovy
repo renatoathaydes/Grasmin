@@ -12,6 +12,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 
+import java.lang.reflect.Modifier
 import java.util.logging.Logger
 
 class Grasmin {
@@ -68,8 +69,8 @@ class Grasmin {
         def classDeclaration = """
             |.class ${modifiers} ${classNode.name}
             |.super ${typer.className( classNode.superClass.name )}
-            |
             |${fields.collect { it.descriptor }.join( '\n' )}
+            |${staticClassInitializer( classNode, fields )}
             |${constructorsFor( classNode, fields )}
             |
             |""".stripMargin() + methodBodies.join( '\n' )
@@ -84,22 +85,39 @@ class Grasmin {
         }
     }
 
+    private String staticClassInitializer( ClassNode classNode, Collection<Map> fields ) {
+        def staticFields = fields.findAll { it.value != null && Modifier.isStatic( it.modifiers as int ) }
+        if ( staticFields ) {
+            """
+            |.method static public <clinit>()V
+            |    .limit stack ${staticFields.size() + 1}
+            |${staticFields.collect { initializeStaticField( it, classNode ) }.join( '\n' )}
+            |    return
+            |.end method
+            """
+        } else {
+            ''
+        }
+    }
+
+    private String initializeStaticField( Map field, ClassNode classNode ) {
+        """\
+        |    ldc ${field.value}
+        |    putstatic ${typer.className( classNode.name )}/${field.name} ${field.fieldType}""".stripMargin()
+    }
+
     private String constructorsFor( ClassNode classNode, Collection<Map> fields ) {
-        def initializedFields = fields.findAll { it.value != null }
+        def initializedFields = fields.findAll { it.value != null && !Modifier.isStatic( it.modifiers as int ) }
         if ( classNode.declaredConstructors || initializedFields ) {
             """\
             |${createConstructors( classNode.declaredConstructors )}
             |${
-                containsDefaultConstructor( classNode.declaredConstructors ) ?
+                classNode.declaredConstructors.any { it.parameters.size() == 0 } ?
                         '' : defaultConstructorWith( initializedFields, classNode )
             }""".stripMargin()
         } else {
             defaultConstructor
         }
-    }
-
-    private boolean containsDefaultConstructor( List<ConstructorNode> constructors ) {
-        constructors.any { it.parameters.size() == 0 }
     }
 
     private String defaultConstructorWith( Collection<Map> initializedFields, ClassNode classNode ) {
@@ -148,7 +166,8 @@ class Grasmin {
             }
             def typeName = typer.typeNameFor( it.type.name )
             def fieldDescriptor = ".field ${typer.modifiersString( it.modifiers )} ${it.name} ${typeName}"
-            [ name: it.name, descriptor: fieldDescriptor, fieldType: typeName, value: initialValue ]
+            [ name : it.name, descriptor: fieldDescriptor, fieldType: typeName,
+              value: initialValue, modifiers: it.modifiers ]
         }
     }
 

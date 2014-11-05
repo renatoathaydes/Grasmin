@@ -36,4 +36,10 @@ class ClassLevelJasminCodeTest {
         assert instance.getI() == 55
     }
 
+    @Test
+    void canDeclareStaticFinalFields() {
+        assert JasminCodeClassComplex.staticString == 'a-string'
+        assert JasminCodeClassComplex.staticInt == 123
+    }
+
 }
