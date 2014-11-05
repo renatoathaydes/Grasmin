@@ -1,9 +1,7 @@
 package grasmin.test_target
 
 import com.athaydes.grasmin.JasminCode
-import groovy.transform.CompileStatic
 
-@CompileStatic
 @JasminCode( outputDebugFile = 'the-jasmin-code-complex-class.j' )
 class JasminCodeClassComplex extends Object {
 
