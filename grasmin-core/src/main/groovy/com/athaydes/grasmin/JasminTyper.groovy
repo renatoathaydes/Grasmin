@@ -51,7 +51,10 @@ class JasminTyper {
     }
 
     static String nonPrimitiveTypeDescription( String type ) {
-        'L' + className( type ) + ';'
+        type.startsWith( '[' ) ?
+                // arrays already come with the correct type name
+                type :
+                'L' + className( type ) + ';'
     }
 
     static String modifiersString( int modifiers ) {
