@@ -1,5 +1,6 @@
 package com.athaydes.grasmin
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.ClassNode
@@ -17,30 +18,39 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
 import java.util.logging.Logger
 
 @GroovyASTTransformation( phase = CompilePhase.SEMANTIC_ANALYSIS )
+@CompileStatic
 class GrasminASTTransformation implements ASTTransformation {
 
     Logger log = Logger.getLogger( GrasminASTTransformation.name )
     static final Set processedSourceUnits = [ ]
     static final Grasmin grasmin = new Grasmin()
-    JasminTyper typer = new JasminTyper()
 
-    public void visit( ASTNode[] astNodes, SourceUnit sourceUnit ) {
+    void visit( ASTNode[] astNodes, SourceUnit sourceUnit ) {
         if ( !processedSourceUnits.add( sourceUnit ) ) return
 
         log.fine "Transforming sourceUnit ${sourceUnit.name}"
 
         if ( !sourceUnit || !sourceUnit.AST ) return
 
-        def processNodes = { List<AnnotatedNode> nodes ->
-            nodes.findAll { node ->
+        def processNodes = { List<? extends AnnotatedNode> nodes ->
+            nodes.findAll { AnnotatedNode node ->
                 node.getAnnotations( new ClassNode( JasminCode ) )
             }.each { AnnotatedNode node ->
-                process( node, sourceUnit )
+                switch ( node ) {
+                    case ClassNode:
+                        process( node as ClassNode, sourceUnit )
+                        break
+                    case MethodNode:
+                        process( node as MethodNode, sourceUnit )
+                        break
+                    default:
+                        throw new Exception( "Cannot annotate nodes of this type with @JasminCode: ${node?.class?.name}" )
+                }
             }
         }
 
-        List classNodes = sourceUnit.getAST().getClasses()
-        List methods = classNodes*.getMethods().flatten()
+        List<ClassNode> classNodes = sourceUnit.getAST().getClasses()
+        List<MethodNode> methods = classNodes*.getMethods().flatten() as List<MethodNode>
 
         processNodes classNodes
         processNodes methods
@@ -69,9 +79,9 @@ class GrasminASTTransformation implements ASTTransformation {
         }
     }
 
-    private void rewriteMethod( SourceUnit sourceUnit, MethodNode method, String assemblerText ) {
+    private static void rewriteMethod( SourceUnit sourceUnit, MethodNode method, String assemblerText ) {
         if ( !assemblerText ) {
-            throw new Exception("No Jasmin code found in method ${method.name}")
+            throw new Exception( "No Jasmin code found in method ${method.name}" )
         }
         def targetDir = sourceUnit.configuration.targetDirectory
         def className = classNameFor( method )
@@ -84,11 +94,11 @@ class GrasminASTTransformation implements ASTTransformation {
         method.code = jasminMethodCall
     }
 
-    static classNameFor( MethodNode methodNode ) {
+    static String classNameFor( MethodNode methodNode ) {
         methodNode.declaringClass.name.replace( '.', '_' ) + '_' + methodNode.name
     }
 
-    private Statement grassemblyStatement( ClassNode jasminClass, MethodNode methodNode ) {
+    private static Statement grassemblyStatement( ClassNode jasminClass, MethodNode methodNode ) {
         new ExpressionStatement(
                 new MethodCallExpression(
                         new ClassExpression( jasminClass ),

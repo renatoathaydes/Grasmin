@@ -1,10 +1,13 @@
 package com.athaydes.grasmin
 
+import groovy.transform.CompileStatic
 import jasmin.Main
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.ConstructorNode
+import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.PropertyExpression
@@ -15,11 +18,12 @@ import org.codehaus.groovy.ast.stmt.Statement
 import java.lang.reflect.Modifier
 import java.util.logging.Logger
 
+@CompileStatic
 class Grasmin {
 
     static final Logger log = Logger.getLogger( Grasmin.name )
-    static final dir = File.createTempDir( 'Grasmin', '' )
-    static final fieldNamePrefixesToSkip = [ '__$', '$staticClassInfo', 'metaClass' ].asImmutable()
+    static final File dir = File.createTempDir( 'Grasmin', '' )
+    static final List<String> fieldNamePrefixesToSkip = [ '__$', '$staticClassInfo', 'metaClass' ].asImmutable()
 
     private JasminTyper typer = new JasminTyper()
 
@@ -66,7 +70,7 @@ class Grasmin {
         def modifiers = typer.modifiersString classNode.modifiers
         def fields = fieldsOf( classNode )
 
-        def classDeclaration = """
+        String classDeclaration = """
             |.class ${modifiers} ${classNode.name}
             |.super ${typer.className( classNode.superClass.name )}
             |${fields.collect { it.descriptor }.join( '\n' )}
@@ -135,8 +139,8 @@ class Grasmin {
         constructorNodes.collect { constructor ->
             """
             |.method ${typer.modifiersString( constructor.modifiers )} <init>(${
-                constructor.parameters.collect {
-                    typer.typeNameFor( it.originType.typeClass.name )
+                constructor.parameters.collect { Parameter p ->
+                    typer.typeNameFor( p.originType.typeClass.name )
                 }.join( '' )
             })V
             |${extractJasminMethodBody( constructor.code )}
@@ -153,30 +157,32 @@ class Grasmin {
     }
 
     private Collection<Map> fieldsOf( ClassNode classNode ) {
-        classNode.fields.findResults {
-            if ( fieldNamePrefixesToSkip.any { prefix -> it.name.startsWith( prefix ) } ) {
+        classNode.fields.findResults { FieldNode node ->
+            if ( fieldNamePrefixesToSkip.any { prefix -> node.name.startsWith( prefix ) } ) {
                 return null
             }
             def initialValue = null
-            if ( it.hasInitialExpression() ) {
-                initialValue = valueOfExpression( it.initialExpression )
-                if ( it.type.name == 'java.lang.String' ) {
+            if ( node.hasInitialExpression() ) {
+                initialValue = valueOfExpression( node.initialExpression )
+                if ( node.type.name == 'java.lang.String' ) {
                     initialValue = '"' + initialValue + '"'
                 }
             }
-            def typeName = typer.typeNameFor( it.type.name )
-            def fieldDescriptor = ".field ${typer.modifiersString( it.modifiers )} ${it.name} ${typeName}"
-            [ name : it.name, descriptor: fieldDescriptor, fieldType: typeName,
-              value: initialValue, modifiers: it.modifiers ]
-        }
+            def typeName = typer.typeNameFor( node.type.name )
+            def fieldDescriptor = ".field ${typer.modifiersString( node.modifiers )} ${node.name} ${typeName}"
+            [ name : node.name, descriptor: fieldDescriptor, fieldType: typeName,
+              value: initialValue, modifiers: node.modifiers ]
+        } as Collection<Map>
     }
 
-    private void writeDebugFileFor( AnnotationNode annotation, String text ) {
+    private static void writeDebugFileFor( AnnotationNode annotation, String text ) {
         String debugFileName = ( annotation.getMember( 'outputDebugFile' ) as ConstantExpression ).value
         if ( debugFileName ) {
             log.fine( "Writing JasminCode to debug file: $debugFileName" )
             try {
-                new File( debugFileName ).write( text )
+                def jFile = new File( debugFileName )
+                jFile.parentFile.mkdirs()
+                jFile.write( text )
             } catch ( e ) {
                 log.warning( "Could not write to debug file '$debugFileName': $e" )
             }
@@ -195,15 +201,16 @@ class Grasmin {
         |.end method""".stripMargin()
     }
 
-    String extractJasminMethodBody( Statement statement ) {
+    static String extractJasminMethodBody( Statement statement ) {
         def firstStatement = firstStatementOf( statement )
         if ( firstStatement instanceof ExpressionStatement ) {
-            return valueOfExpression( firstStatement.expression )
+            def exprStatement  = firstStatement as ExpressionStatement
+            return valueOfExpression( exprStatement.expression )
         }
         return null
     }
 
-    private String valueOfExpression( Expression expression ) {
+    private static String valueOfExpression( Expression expression ) {
         if ( expression instanceof PropertyExpression ) {
             return Eval.me( expression.text )
         } else {
@@ -212,7 +219,7 @@ class Grasmin {
 
     }
 
-    private Statement firstStatementOf( Statement statement ) {
+    private static Statement firstStatementOf( Statement statement ) {
         if ( statement instanceof BlockStatement ) {
             statement.statements?.first()
         } else {
@@ -220,7 +227,7 @@ class Grasmin {
         }
     }
 
-    private void withTempFile( String fileName, Closure useFile ) {
+    private static void withTempFile( String fileName, Closure useFile ) {
         def tmpJFile = dir.toPath().resolve( fileName + '.j' ).toFile()
         try {
             useFile tmpJFile

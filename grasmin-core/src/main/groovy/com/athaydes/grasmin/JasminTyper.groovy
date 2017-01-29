@@ -1,25 +1,28 @@
 package com.athaydes.grasmin
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Parameter
 
 import java.lang.reflect.Modifier
 
 /**
  * Translates classes into Jasmin types (JVM types).
  */
+@CompileStatic
 class JasminTyper {
 
-    String typeDescriptorOf( MethodNode methodNode, String newMethodName = null ) {
-        def paramTypes = methodNode.parameters.collect { typeNameFor( it.type.name ) }.join( '' )
+    static String typeDescriptorOf( MethodNode methodNode, String newMethodName = null ) {
+        def paramTypes = methodNode.parameters.collect { Parameter p -> typeNameFor( p.type.name ) }.join( '' )
         def returnType = typeNameFor( methodNode.returnType.name )
         "${newMethodName ?: methodNode.name}(${paramTypes})${returnType}"
     }
 
-    String className( String javaClassName ) {
+    static String className( String javaClassName ) {
         javaClassName.replace( '.', '/' )
     }
 
-    String typeNameFor( String type ) {
+    static String typeNameFor( String type ) {
         switch ( type ) {
         // primitive types
             case 'int': return 'I'
@@ -47,11 +50,11 @@ class JasminTyper {
         }
     }
 
-    String nonPrimitiveTypeDescription( String type ) {
+    static String nonPrimitiveTypeDescription( String type ) {
         'L' + className( type ) + ';'
     }
 
-    String modifiersString( int modifiers ) {
+    static String modifiersString( int modifiers ) {
         def result = Modifier.isPublic( modifiers ) ? 'public ' : ''
         result += Modifier.isPrivate( modifiers ) ? 'private ' : ''
         result += Modifier.isProtected( modifiers ) ? 'protected ' : ''
