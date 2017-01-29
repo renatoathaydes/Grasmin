@@ -1,5 +1,7 @@
 package com.athaydes.grasmin
 
+import groovy.transform.TypeChecked
+import groovy.transform.TypeCheckingMode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
@@ -11,14 +13,13 @@ import java.lang.reflect.Modifier
 /**
  *
  */
+@TypeChecked
 class JasminTyperSpec extends Specification {
 
-    def "A Class object can be translated into a JVM type descriptor as per the class file format"() {
-        given: 'A JasminTyper'
-        def jasminTyper = new JasminTyper()
-
+    def "A Class object can be translated into a JVM type descriptor as per the class file format"(
+            Class type, String expected ) {
         when: 'A class is translated to a JVM type descriptor'
-        def result = jasminTyper.typeNameFor( type.name )
+        def result = JasminTyper.typeNameFor( type.name )
 
         then: 'The result is as described in the class file format specification'
         result == expected
@@ -33,17 +34,15 @@ class JasminTyperSpec extends Specification {
         Thread  | 'Ljava/lang/Thread;'
     }
 
-    def "Type Descriptors can be correctly discovered from a MethodNode"() {
-        given: 'A JasminTyper'
-        def jasminTyper = new JasminTyper()
-
-        and: 'A MethodNode for some example methods'
+    def "Type Descriptors can be correctly discovered from a MethodNode"(
+            String methodName, Collection<Class> paramTypes, Class returnType, String newMethodName, String expected ) {
+        given: 'A MethodNode for some example methods'
         def node = methodNode( methodName, paramTypes, returnType )
 
         when: 'The type descriptor for a MethodNode is requested'
         def result = newMethodName ?
-                jasminTyper.typeDescriptorOf( node, newMethodName ) :
-                jasminTyper.typeDescriptorOf( node )
+                JasminTyper.typeDescriptorOf( node, newMethodName ) :
+                JasminTyper.typeDescriptorOf( node )
 
         then: 'The result is as described in the class file format specification'
         result == expected
@@ -56,20 +55,19 @@ class JasminTyperSpec extends Specification {
 
     }
 
-    final paramNames = 'a'..'z' as LinkedList
+    final LinkedList<String> paramNames = 'a'..'z' as LinkedList
 
-    def methodNode( methodName, paramTypes, returnType ) {
+    MethodNode methodNode( String methodName, Collection<Class> paramTypes, Class returnType ) {
         new MethodNode( methodName, 0, new ClassNode( returnType ),
                 paramTypes.collect { new Parameter( new ClassNode( it ), paramNames.remove() ) } as Parameter[],
                 [ ] as ClassNode[], new Statement() )
     }
 
-    def "Can collect all modifiers of a class"() {
-        given: 'A JasminTyper'
-        def jasminTyper = new JasminTyper()
-
+    // IntelliJ  has trouble with int methods
+    @TypeChecked( TypeCheckingMode.SKIP )
+    "Can collect all modifiers of a class"( int modifiers, String expected ) {
         when: "All modifiers of a class are requested"
-        def result = jasminTyper.modifiersString( modifiers )
+        def result = JasminTyper.modifiersString( modifiers )
 
         then: "The expected value is returned"
         result == expected
