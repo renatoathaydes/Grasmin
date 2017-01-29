@@ -2,7 +2,7 @@ package grasmin.test_target
 
 import com.athaydes.grasmin.JasminCode
 
-@JasminCode( outputDebugFile = 'the-jasmin-code-complex-class.j' )
+@JasminCode( outputDebugFile = 'build/the-jasmin-code-complex-class.j' )
 class JasminCodeClassComplex extends Object {
 
     private String name = 'Joda'
