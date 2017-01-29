@@ -9,12 +9,11 @@ repositories {
     jcenter()
 }
 
-def jasminJar = System.getenv( 'JASMIN_JAR' ) ?: '/usr/local/lib/jasmin/jasmin-2.4/jasmin.jar'
-if (!jasminJar) throw new GradleException('You must specify JASMIN_JAR environment property!')
-assert (jasminJar as File).exists()
+def jasminJar = rootProject.file( 'libs/jasmin.jar' )
+assert jasminJar?.exists()
 
 dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.2'
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.8'
     compile files( jasminJar )
-    testCompile "org.spockframework:spock-core:0.7-groovy-2.0"
+    testCompile "org.spockframework:spock-core:1.1-groovy-2.4-rc-3"
 }
