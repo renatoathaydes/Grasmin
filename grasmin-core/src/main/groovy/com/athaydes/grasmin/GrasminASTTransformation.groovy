@@ -33,9 +33,10 @@ class GrasminASTTransformation implements ASTTransformation {
         if ( !sourceUnit || !sourceUnit.AST ) return
 
         def processNodes = { List<? extends AnnotatedNode> nodes ->
-            nodes.findAll { AnnotatedNode node ->
+            def annotatedNodes = nodes.findAll { AnnotatedNode node ->
                 node.getAnnotations( new ClassNode( JasminCode ) )
-            }.each { AnnotatedNode node ->
+            }
+            for ( AnnotatedNode node in annotatedNodes ) {
                 switch ( node ) {
                     case ClassNode:
                         process( node as ClassNode, sourceUnit )

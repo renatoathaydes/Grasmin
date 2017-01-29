@@ -176,7 +176,11 @@ class Grasmin {
     }
 
     private static void writeDebugFileFor( AnnotationNode annotation, String text ) {
-        String debugFileName = ( annotation.getMember( 'outputDebugFile' ) as ConstantExpression ).value
+        def outputFileMember = annotation?.getMember( 'outputDebugFile' )
+        String debugFileName = outputFileMember instanceof ConstantExpression ?
+                ( ( ConstantExpression ) outputFileMember ).value :
+                ''
+
         if ( debugFileName ) {
             log.fine( "Writing JasminCode to debug file: $debugFileName" )
             try {
@@ -204,7 +208,7 @@ class Grasmin {
     static String extractJasminMethodBody( Statement statement ) {
         def firstStatement = firstStatementOf( statement )
         if ( firstStatement instanceof ExpressionStatement ) {
-            def exprStatement  = firstStatement as ExpressionStatement
+            def exprStatement = firstStatement as ExpressionStatement
             return valueOfExpression( exprStatement.expression )
         }
         return null
