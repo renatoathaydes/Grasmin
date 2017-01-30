@@ -59,6 +59,8 @@ version = 0.1
 
 If you don't use Maven and Gradle, just do `gradlew jar` to create a jar in the `build/libs` folder.
 
+The Jasmin Jar can be found on [SourceForge](https://sourceforge.net/projects/jasmin/files/).
+
 ### Annotating classes
 
 When you annotate a class with `@JasminCode`, everything
