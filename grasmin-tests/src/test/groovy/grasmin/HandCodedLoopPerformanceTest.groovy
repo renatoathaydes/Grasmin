@@ -31,6 +31,7 @@ class HandCodedLoopPerformanceTest {
 
         count.times { int i ->
             def times = tests*.value.collect { action ->
+                System.gc()
                 def input = ( 1..10000 ).collect { PerformanceTest.randomPositiveInt( random ) } as int[]
                 withTimer { ( action as Function<int[], Long> ).apply( input ) }
             }

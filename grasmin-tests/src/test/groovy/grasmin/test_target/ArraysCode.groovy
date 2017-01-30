@@ -30,30 +30,34 @@ class ArraysCode {
 
     String[] stringify( int[] ints ) {
         """\
-        .limit locals 4
-        .limit stack 3
+        .limit locals 3
+        .limit stack 5
         aload_1
         arraylength                       ; put the length of the array on the stack
-        istore_2                          ; store the array length on local variable 2
-        iload_2                           ; read the array length
+        dup
+        dup                               ; Stack: length, length, length |TOP
         anewarray java/lang/String        ; create a String array with the same length as the input array
-        astore_3                          ; store the result in the local variable 3
+        astore_2                          ; store the result in the local variable 2
+                                          ; Stack: length, length |TOP
         Loop:
-        iload_2
         ifeq End                          ; check if the remaining length is 0, go to End if so
-        iinc 2 -1                         ; decrement index
+        iconst_1                          ; Stack: length, 1 |TOP
+        isub                              ; decrement index
+        dup                               ; Stack: index, index |TOP
+        aload_2                           ; load the result array
+        swap                              ; Stack: index, resultArray, index |TOP
+        dup                               ; Stack: index, resultArray, index, index |TOP
         aload_1                           ; load the input array
-        iload_2                           ; load current index
+        swap                              ; Stack: index, resultArray, index, inputArray, index |TOP
         iaload                            ; read current value
+                                          ; Stack: index, resultArray, index, intValue |TOP
         invokestatic java/lang/Integer.toString(I)Ljava/lang/String;
-        aload_3                           ; load the result array
-        swap                              ; swap so the String value is on top of the stack
-        iload_2                           ; load current index
-        swap                              ; swap so the stack has arrayRef, index, value
+                                          ; Stack: index, resultArray, index, stringValue |TOP
         aastore                           ; put the result String into the result array
+        dup                               ; Stack: index, index |TOP
         goto Loop                         ; loop
         End:
-        aload_3
+        aload_2
         areturn
         """
     }
