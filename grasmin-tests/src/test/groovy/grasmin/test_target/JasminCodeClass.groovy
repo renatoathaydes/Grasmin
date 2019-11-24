@@ -57,4 +57,15 @@ class JasminCodeClass extends Object {
         111 // ignored
     }
 
+    int getInts() {
+        """\
+        .limit stack 2
+        iconst_2
+        iconst_3
+        iadd
+        ireturn
+        """
+        0 // ignored
+    }
+
 }

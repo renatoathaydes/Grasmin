@@ -30,6 +30,12 @@ class ClassLevelJasminCodeTest {
     }
 
     @Test
+    void canAddIntegers() {
+        def instance = new JasminCodeClass( 'Spock', 42 )
+        assert instance.ints == 5
+    }
+
+    @Test
     void canDeclareDefaultConstructor() {
         def instance = new JasminCodeClassComplex()
         assert instance.getName() == 'John'
